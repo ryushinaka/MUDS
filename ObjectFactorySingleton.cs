@@ -17,9 +17,9 @@ namespace Miniscript.Unity3DDataSystem
         /// The data types defined by scripts, associated with their names
         /// </summary>
         static Dictionary<string, IObjectWarehouse> _types;
-        static ObjectWarehouseManifest _manifest;
+        static Dictionary<string, System.Tuple<string, string>> _manifest;
 
-        public static string folderPath;
+        static string workingPath;
 
         public static bool Contains(string typename)
         {
@@ -38,13 +38,31 @@ namespace Miniscript.Unity3DDataSystem
             {
                 _types.Add(tname, store);
                 _types[tname].Initialize(new ValString(tname), new ValMap());
-                if (store is ObjectWarehouse_Raw) { _manifest.Add(tname, "memory"); }
-                else if (store is ObjectWarehouse_DataSet) { _manifest.Add(tname, "dataset"); }
+                if (store is ObjectWarehouse_Raw)
+                {
+                    _manifest.Add(tname, new Tuple<string, string>(Guid.NewGuid().ToString(), "memory"));
+                }
+                else if (store is ObjectWarehouse_DataSet)
+                {
+                    _manifest.Add(tname, new Tuple<string, string>(Guid.NewGuid().ToString(), "dataset"));
+                }
 
 #if DEBUG_MUDS
                 Debug.Log("Created object warehouse of type {" + tname + "}");
 #endif
             }
+
+            //create the manifest of our data stores
+            Configuration cfg = new Configuration();
+
+            foreach (KeyValuePair<string, System.Tuple<string, string>> kv in _manifest)
+            {
+                cfg.Add(kv.Key);
+                cfg[kv.Key].Add("Guid", kv.Value.Item1);
+                cfg[kv.Key].Add("Type", kv.Value.Item2);
+            }
+            //write the manifest to file
+            cfg.SaveToFile(workingPath + "manifest.txt");
         }
 
         public static ValList TypeList()
@@ -62,11 +80,23 @@ namespace Miniscript.Unity3DDataSystem
         {
             if (_types.ContainsKey(tname))
             {
-                _types.Remove(tname);
+                File.Delete(workingPath + _manifest[tname].Item1 + ".xml");
                 _manifest.Remove(tname);
+
 #if DEBUG_MUDS
                 Debug.Log("Removed object warehouse of type {" + tname + "}");
 #endif
+                //create the manifest of our data stores
+                Configuration cfg = new Configuration();
+
+                foreach (KeyValuePair<string, System.Tuple<string, string>> kv in _manifest)
+                {
+                    cfg.Add(kv.Key);
+                    cfg[kv.Key].Add("Guid", kv.Value.Item1);
+                    cfg[kv.Key].Add("Type", kv.Value.Item2);
+                }
+                //write the manifest to file
+                cfg.SaveToFile(workingPath + "manifest.txt");
             }
         }
 
@@ -82,76 +112,203 @@ namespace Miniscript.Unity3DDataSystem
 
         public static bool LoadDataStore(string name)
         {
-            if (!_manifest.Contains(name))
+            if (!_manifest.ContainsKey(name))
             {
                 MiniScriptSingleton.LogError("LoadDataStore failed to find the specified store label {" + name + "}");
                 return false;
             }
 
-            _types[name].ReadFromFile(_manifest.GetPath(name));
-            return true;
+            string path = workingPath + _manifest[name].Item1 + ".xml";
+            if (_types.ContainsKey(name))
+            {   //if it already exists, we load & replace the existing element in the dictionary
+                //the ReadFromFile function achieves this by removing previous data.
+                _types[name].ReadFromFile(path);
+                return true;
+            }
+            else
+            {   //the data store is not currently loaded in _types
+                //so we have to instantiate the ObjectWarehouse variable before reading the data
+                switch (_manifest[name].Item2)
+                {
+                    case "memory":
+                        _types.Add(name, new ObjectWarehouse_Raw());
+                        _types[name].ReadFromFile(path);
+                        break;
+                    case "dataset":
+                        _types.Add(name, new ObjectWarehouse_DataSet());
+                        _types[name].ReadFromFile(path);
+                        break;
+                }
+                return true;
+            }
         }
+
         public static bool SaveDataStore(string name)
         {
-            if (!_manifest.Contains(name))
+            if (!_manifest.ContainsKey(name))
             {
                 MiniScriptSingleton.LogError("SaveDataStore failed to find the specified store label {" + name + "}");
                 return false;
             }
 
-            _types[name].WriteToFile(_manifest.GetPath(name));
+            string path = workingPath + _manifest[name].Item1 + ".xml";
+            _types[name].WriteToFile(path);
             return true;
         }
 
-        public static void LoadMod()
+        public static bool UnloadDataStore(string name)
         {
-            _manifest.ReadManifest();
+            if (!_manifest.ContainsKey(name))
+            {
+                MiniScriptSingleton.LogError("UnloadDataStore failed to find the specified store label {" + name + "}");
+                return false;
+            }
+
+            _types.Remove(name);         
+            if(!File.Exists(workingPath + _manifest[name].Item1 + ".xml"))
+            {
+                _manifest.Remove(name);
+            }
+            //else a datastore of this Guid does already exist in a saved file format, and we cant remove the manifest entry
+            //if the entry is removed than the saved data store is treated as not an element of the manifest
+            return true;
         }
 
-        public static void SaveAutosave()
+        public static void LoadMod(string pathe)
         {
-            if (_manifest.Contains("Autosave"))
+            workingPath = pathe;
+            //ensure that our file manifest and types collection are empty when loading from the 'mods' folder
+            _manifest.Clear();
+            _types.Clear();
+
+            string path = workingPath + "manifest.txt";
+            if (File.Exists(path))
             {
-                string path = _manifest.GetPath("Autosave");
-                DoSaveAction("Autosave", path);
+                var c = Configuration.LoadFromFile(path);                
+                foreach (Section s in c)
+                {
+                    if (s["Type"].StringValue == "memory")
+                    {
+                        if (File.Exists(workingPath + s["Guid"].StringValue + ".txt"))
+                        {
+                            _manifest.Add(s.Name, new System.Tuple<string, string>(s["Guid"].StringValue, s["Type"].StringValue));
+                        }
+                    }
+                    else if (s["Type"].StringValue == "dataset")
+                    {
+                        if (File.Exists(workingPath + s["Guid"].StringValue + ".xml"))
+                        {
+                            _manifest.Add(s.Name, new System.Tuple<string, string>(s["Guid"].StringValue, s["Type"].StringValue));
+                        }
+                    }
+                }
             }
-            else if (!_manifest.Contains("Autosave"))
+        }
+
+        public static void CreateAutosave()
+        {
+            if (_manifest.ContainsKey("Autosave"))
             {
-                _manifest.Add("Autosave", "state");
-                DoSaveAction("Autosave", _manifest.GetPath("Autosave"));
+                string path = workingPath;
+                path += _manifest["Autosave"].Item1; //append the Guid
+                path += ".tmp";
+
+                DoSaveAction("Autosave", path);
+
+                //create the manifest of our data stores
+                Configuration cfg = new Configuration();
+
+                foreach (KeyValuePair<string, System.Tuple<string, string>> kv in _manifest)
+                {
+                    cfg.Add(kv.Key);
+                    cfg[kv.Key].Add("Guid", kv.Value.Item1);
+                    cfg[kv.Key].Add("Type", kv.Value.Item2);
+                }
+                //write the manifest to file
+                cfg.SaveToFile(workingPath + "manifest.txt");
+            }
+            else if (!_manifest.ContainsKey("Autosave"))
+            {
+                _manifest.Add("Autosave", new Tuple<string, string>(Guid.NewGuid().ToString(), "state"));
+                string path = workingPath + _manifest["Autosave"].Item1 + ".tmp";
+                DoSaveAction("Autosave", path);
+
+                //create the manifest of our data stores
+                Configuration cfg = new Configuration();
+
+                foreach (KeyValuePair<string, System.Tuple<string, string>> kv in _manifest)
+                {
+                    cfg.Add(kv.Key);
+                    cfg[kv.Key].Add("Guid", kv.Value.Item1);
+                    cfg[kv.Key].Add("Type", kv.Value.Item2);
+                }
+                //write the manifest to file
+                cfg.SaveToFile(workingPath + "manifest.txt");
             }
         }
 
         public static void SaveState(string label)
         {
-            if (_manifest.Contains(label))
+            if (_manifest.ContainsKey(label))
             {
-                string path = _manifest.GetPath(label);
+                string path = workingPath + _manifest[label].Item1 + ".save";
                 DoSaveAction(label, path);
             }
-            else if (!_manifest.Contains(label))
+            else if (!_manifest.ContainsKey(label))
             {
-                _manifest.Add(label, "state");
-                DoSaveAction(label, _manifest.GetPath(label));
+                _manifest.Add(label, new Tuple<string, string>(Guid.NewGuid().ToString(), "state"));
+                string path = workingPath + _manifest[label].Item1 + ".save";
+                DoSaveAction(label, path);
+
+                //create the manifest of our data stores
+                Configuration cfg = new Configuration();
+
+                foreach (KeyValuePair<string, System.Tuple<string, string>> kv in _manifest)
+                {
+                    cfg.Add(kv.Key);
+                    cfg[kv.Key].Add("Guid", kv.Value.Item1);
+                    cfg[kv.Key].Add("Type", kv.Value.Item2);
+                }
+                //write the manifest to file
+                cfg.SaveToFile(workingPath + "manifest.txt");
             }
         }
 
         public static void LoadAutosave()
         {
-            if (_manifest.Contains("Autosave"))
+            if (_manifest.ContainsKey("Autosave"))
             {
-                string path = _manifest.GetPath("Autosave");
+                string path = workingPath + _manifest["Autosave"].Item1 + ".tmp";
                 DoLoadAction(path);
             }
         }
 
         public static void LoadState(string label)
         {
-            if (_manifest.Contains(label))
+            if (_manifest.ContainsKey(label))
             {
-                string path = _manifest.GetPath(label);
+                string path = workingPath + _manifest[label].Item1 + ".save";
                 DoLoadAction(path);
             }
+        }
+
+        public static ValList GetStates()
+        {
+            ValList result = new ValList();            
+            foreach(KeyValuePair<string, Tuple<string,string>>kv in _manifest)
+            {
+                //only add the states that are data stores, skip the Autosave
+                if(kv.Value.Item2 != "Autosave")
+                {
+                    //label is Key, Guid is Item1, Type is Item2
+                    ValMap map = new ValMap();
+                    map.map.Add(new ValString("Label"), new ValString(kv.Key));
+                    map.map.Add(new ValString("Guid"), new ValString(kv.Value.Item1));
+                    map.map.Add(new ValString("Type"), new ValString(kv.Value.Item2));
+                    result.values.Add(map);
+                }
+            }
+            return result;
         }
 
         static void DoSaveAction(string label, string path)
@@ -240,6 +397,9 @@ namespace Miniscript.Unity3DDataSystem
 
         static void DoLoadAction(string path)
         {
+            //first we clear what is currently in memory
+            _types.Clear();
+            //allocate a blank DataSet to prepare to read the xml file
             var set = new DataSet();
             set.ReadXml(path, XmlReadMode.ReadSchema);
 
@@ -257,7 +417,7 @@ namespace Miniscript.Unity3DDataSystem
                         foreach (DataRow dr in set.Tables[frow["Label"].ToString()].Rows)
                         {
                             var tmp = wh1._type.Clone();
-                            foreach(DataColumn dc in table.Columns)
+                            foreach (DataColumn dc in table.Columns)
                             {
                                 if (dc.DataType == typeof(string))
                                 {
@@ -293,7 +453,7 @@ namespace Miniscript.Unity3DDataSystem
         {
             _types = null;
             _types = new Dictionary<string, IObjectWarehouse>();
-            _manifest = new ObjectWarehouseManifest();
+            _manifest = new Dictionary<string, Tuple<string, string>>();
         }
     }
 }

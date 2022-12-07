@@ -252,7 +252,7 @@ namespace Miniscript.Unity3DDataSystem
             }
         }
 
-        bool IObjectWarehouse.hasAttribute(ValString name)
+        bool IObjectWarehouse.HasAttribute(ValString name)
         {
             if (((IObjectWarehouse)this).GetMSType().ContainsKey(name.value)) return true;
             return false;
@@ -456,6 +456,7 @@ namespace Miniscript.Unity3DDataSystem
         }
         void IObjectWarehouse.ReadFromFile(string path)
         {
+            _set = new DataSet();
             _set.ReadXml(path, XmlReadMode.ReadSchema);
         }
     }

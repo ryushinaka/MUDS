@@ -17,7 +17,7 @@ namespace Miniscript.Unity3DDataSystem
         ValMap IObjectWarehouse.CreateInstance()
         {
             ValMap newTmp = _type.Clone();
-            newTmp.map.Add(new ValString("__ID__"), new ValString(Guid.NewGuid().ToString()));
+            newTmp["__ID__"] = new ValString(Guid.NewGuid().ToString());            
             newTmp.assignOverride = new ValMap.AssignOverrideFunc(((IObjectWarehouse)this).ValueAssignChecker);
             lock (_locker)
             {
@@ -28,7 +28,12 @@ namespace Miniscript.Unity3DDataSystem
 
         ValList IObjectWarehouse.CreateInstances(ValNumber quantity)
         {
-            return null;
+            ValList tmp = new ValList();
+            for(int i = quantity.IntValue(); i > 0; i--)
+            {
+                tmp.values.Add(((IObjectWarehouse)this).CreateInstance());
+            }
+            return tmp;
         }
 
         void IObjectWarehouse.DestroyInstance(ValString id)
@@ -81,7 +86,7 @@ namespace Miniscript.Unity3DDataSystem
         ValMap IObjectWarehouse.GetRandomInstance()
         {
             System.Random rnd = new System.Random();
-            var x = rnd.Next(0, _instanced.Count + 1);
+            var x = rnd.Next(0, _instanced.Count);
             return _instanced[x];
         }
 
@@ -162,7 +167,7 @@ namespace Miniscript.Unity3DDataSystem
 
         int IObjectWarehouse.InstanceCount { get { return _instanced.Count; } }
 
-        bool IObjectWarehouse.hasAttribute(ValString name)
+        bool IObjectWarehouse.HasAttribute(ValString name)
         {
             if (_type.ContainsKey(name.value)) return true;
             return false;
@@ -389,6 +394,9 @@ namespace Miniscript.Unity3DDataSystem
         }
         void IObjectWarehouse.ReadFromFile(string path)
         {
+            _instanced.Clear();
+            _type = new ValMap();
+
             var set = new DataSet();
             set.ReadXml(path, XmlReadMode.ReadSchema);
             var dt = set.Tables[0];
@@ -429,11 +437,11 @@ namespace Miniscript.Unity3DDataSystem
             {
                 if (dc.DataType == typeof(string))
                 {
-                    rst.map.Add(new ValString(dc.ColumnName), new ValString((string)dc.DefaultValue));
+                    rst.map.Add(new ValString(dc.ColumnName), new ValString(string.Empty));
                 }
                 else if (dc.DataType == typeof(double))
                 {
-                    rst.map.Add(new ValString(dc.ColumnName), new ValNumber((double)dc.DefaultValue));
+                    rst.map.Add(new ValString(dc.ColumnName), new ValNumber((double)0));
                 }
             }
 

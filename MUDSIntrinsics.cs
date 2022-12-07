@@ -21,7 +21,9 @@ namespace Miniscript.Unity3DDataSystem
             {
 
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.CreateDataStore: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.CreateDataStore: " +
+                    context.GetLocalString("typename") + " " +
+                    context.GetLocalString("storetype"));
 #endif
                 if (ObjectFactorySingleton.Contains(context.GetLocalString("typename")))
                 {   //type is already 'registered' and has an ObjectWarehouse allocated
@@ -43,7 +45,7 @@ namespace Miniscript.Unity3DDataSystem
                     }
                 }
 
-                context.interpreter.standardOutput.Invoke("");
+                //context.interpreter.standardOutput.Invoke("");
                 return new Intrinsic.Result(null, true);
             };
             #endregion
@@ -54,7 +56,8 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.RemoveDataStore: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.RemoveDataStore: " +
+                    context.GetLocalString("typename"));
 #endif
                 ObjectFactorySingleton.Remove(context.GetLocalString("typename"));
                 return new Intrinsic.Result(null, true);
@@ -62,13 +65,15 @@ namespace Miniscript.Unity3DDataSystem
             #endregion
 
             a = Intrinsic.Create("GetTypeStoreList");
+            #region
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.GetTypeStoreList: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.GetTypeStoreList");
 #endif
                 return new Intrinsic.Result(ObjectFactorySingleton.TypeList(), true);
             };
+            #endregion
 
             a = Intrinsic.Create("Select");
             #region
@@ -78,7 +83,10 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.Select: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.Select: " +
+                    context.GetLocalString("type") + " " +
+                    context.GetLocalString("property") + " " +
+                    context.GetLocalString("value"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -107,7 +115,10 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.SelectRegx: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.SelectRegx: " +
+                    context.GetLocalString("type") + " " +
+                    context.GetLocalString("property") + " " +
+                    context.GetLocalString("pattern"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -131,7 +142,11 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.Select: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.Select: " +
+                    context.GetLocalString("type") + " " +
+                    context.GetLocalString("property") + " " +
+                    context.GetLocalString("lower") + " " +
+                    context.GetLocalString("upper"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -157,7 +172,9 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.GetInstance: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.GetInstance: " +
+                    context.GetLocalString("type") + " " +
+                    context.GetLocalString("ID"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -174,7 +191,8 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSInstrinsics.GetRandomInstance: " + context.ToString());
+                Debug.Log("MUDSInstrinsics.GetRandomInstance: " +
+                    context.GetLocalString("type"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -193,7 +211,10 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.GetRandomInstances: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.GetRandomInstances: " +
+                    context.GetLocalString("type") + " " +
+                    context.GetLocalString("quantity") + " " +
+                    context.GetLocalString("unique"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -212,7 +233,8 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.GetInstances: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.GetInstances: " +
+                    context.GetLocalString("type"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -231,7 +253,9 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.RemoveInstance: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.RemoveInstance: " +
+                    context.GetLocalString("type") + " " +
+                    context.GetLocalString("ID"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -250,7 +274,9 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.RemoveInstances: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.RemoveInstances: " +
+                    context.GetLocalString("type") + " " +
+                    ((ValList)context.GetLocal("list")).values.ToString());
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -276,7 +302,8 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.CreateInstance: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.CreateInstance: " +
+                    context.GetLocalString("type"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -296,7 +323,9 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.CreateInstances: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.CreateInstances: " +
+                    context.GetLocalString("type") + " " +
+                    context.GetLocalString("quantity"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -315,7 +344,9 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.InstanceQuantity: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.InstanceQuantity: " +
+                    context.GetLocalString("type")
+                    );
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -333,7 +364,9 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.HasAttribute: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.HasAttribute: " +
+                    context.GetLocalString("type") + " " +
+                    context.GetLocalString("propertyname"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -355,7 +388,10 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.AddAttribute: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.AddAttribute: " +
+                    context.GetLocalString("type") + " " +
+                    context.GetLocalString("propertyname") + " " +
+                    context.GetLocalString("propertytype"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -377,7 +413,8 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.RemoveAttribute: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.RemoveAttribute: "
+                    + context.GetLocalString("type") + " " + context.GetLocalString("propertyname"));
 #endif
                 var rf = ObjectFactorySingleton.Get(context.GetLocalString("type"));
                 if (rf != null)
@@ -397,10 +434,12 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.SaveDataStore: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.SaveDataStore: " + context.GetLocalString("type"));
 #endif
                 ObjectFactorySingleton.SaveDataStore(context.GetLocalString("type"));
-                return new Intrinsic.Result(null);
+                return new Intrinsic.Result(ValNumber.Truth(
+                    ObjectFactorySingleton.SaveDataStore(
+                        context.GetLocalString("type"))));
             };
             #endregion
 
@@ -410,10 +449,27 @@ namespace Miniscript.Unity3DDataSystem
             a.code = (context, partialResult) =>
             {
 #if DEBUG_MUDS
-                Debug.Log("MUDSIntrinsics.LoadDataStore: " + context.ToString());
+                Debug.Log("MUDSIntrinsics.LoadDataStore: " + context.GetLocalString("type"));
 #endif
-                ObjectFactorySingleton.LoadDataStore(context.GetLocalString("type"));
-                return new Intrinsic.Result(null);
+
+                return new Intrinsic.Result(ValNumber.Truth(
+                    ObjectFactorySingleton.LoadDataStore(
+                        context.GetLocalString("type"))));
+            };
+            #endregion
+
+            a = Intrinsic.Create("UnloadDataStore");
+            #region
+            a.AddParam("type");
+            a.code = (context, partialResult) =>
+            {
+#if DEBUG_MUDS
+                Debug.Log("MUDSIntrinsics.UnloadDataStore: " + context.GetLocalString("type"));
+#endif
+
+                return new Intrinsic.Result(ValNumber.Truth(
+                    ObjectFactorySingleton.UnloadDataStore(
+                        context.GetLocalString("type"))));
             };
             #endregion
 
@@ -423,17 +479,25 @@ namespace Miniscript.Unity3DDataSystem
             a.AddParam("savename");
             a.code = (context, partialResult) =>
             {
+#if DEBUG_MUDS
+                Debug.Log("MUDSIntrinsics.SaveState: " + context.GetLocalString("savename"));
+#endif
 
+                ObjectFactorySingleton.SaveState(
+                    context.GetLocalString("savename"));
                 return new Intrinsic.Result(null);
             };
             #endregion
 
             //creates a 'saved game' as a single file, unnamed, useful for multiple reasons
-            a = Intrinsic.Create("SaveAutosave");
+            a = Intrinsic.Create("CreateAutosave");
             #region
             a.code = (context, partialResult) =>
             {
-
+#if DEBUG_MUDS
+                Debug.Log("MUDSIntrinsics.CreateAutosave");
+#endif
+                ObjectFactorySingleton.CreateAutosave();
                 return new Intrinsic.Result(null);
             };
             #endregion
@@ -443,7 +507,14 @@ namespace Miniscript.Unity3DDataSystem
             a.AddParam("savename");
             a.code = (context, partialResult) =>
             {
-
+#if DEBUG_MUDS
+                Debug.Log("MUDSIntrinsics.LoadState: " + context.GetLocalString("savename"));
+#endif
+                if (ObjectFactorySingleton.Contains(context.GetLocalString("savename")))
+                {
+                    ObjectFactorySingleton.LoadState(context.GetLocalString("savename"));
+                    return new Intrinsic.Result(ValNumber.Truth(true));
+                }
                 return new Intrinsic.Result(null);
             };
             #endregion
@@ -452,18 +523,31 @@ namespace Miniscript.Unity3DDataSystem
             #region        
             a.code = (context, partialResult) =>
             {
-
-                return new Intrinsic.Result(null);
+#if DEBUG_MUDS
+                Debug.Log("MUDSIntrinsics.LoadAutosave");
+#endif
+                if (ObjectFactorySingleton.Contains("Autosave"))
+                {
+                    ObjectFactorySingleton.LoadAutosave();
+                }
+                return new Intrinsic.Result(ValNumber.Truth(false));
             };
             #endregion
-
 
             a = Intrinsic.Create("GetStates");
             #region        
             a.code = (context, partialResult) =>
             {
-
-                return new Intrinsic.Result(null);
+                ValList tmp = ObjectFactorySingleton.GetStates();
+                string states = string.Empty;
+                foreach (ValMap map in tmp.values)
+                {
+                    states += map["Label"];
+                }
+#if DEBUG_MUDS
+                Debug.Log("MUDSIntrinsics.GetStates: " + states);
+#endif
+                return new Intrinsic.Result(ObjectFactorySingleton.GetStates());
             };
             #endregion
         }

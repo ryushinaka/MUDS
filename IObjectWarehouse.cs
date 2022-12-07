@@ -25,7 +25,7 @@ namespace Miniscript.Unity3DDataSystem
 
         int InstanceCount { get; }
 
-        bool hasAttribute(ValString name);
+        bool HasAttribute(ValString name);
         bool AddAttribute(ValString aname, Value value);
         bool RemoveAttribute(ValString aname);
 
